@@ -1,0 +1,4 @@
+Dockerfile
+README.md
+npm-debug.log
+app/node_modules
