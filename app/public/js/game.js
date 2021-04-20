@@ -3,7 +3,7 @@ const widthOutput = document.querySelector('#width');
 const playerSprite = 'assets/sprites/player.png';
 const box = 'assets/images/blue_square_50_50.png';
 
-const playerMoveSpeedAx = 160;
+const playerMoveSpeedAx = 200;
 const playerMoveSpeedDiagonal = (1.414 * playerMoveSpeedAx) / 2 ;
 function reportWindowSize() {
   heightOutput.textContent =document.getElementById('div_game');
@@ -89,13 +89,23 @@ function create() {
 
   this.anims.create({
       key: 'right',
-      frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
+      frames: this.anims.generateFrameNumbers('player', { start: 5, end: 7 }),
       frameRate: 10,
       repeat: -1
   });
 
-  cursors = this.input.keyboard.createCursorKeys();
+  arrows = this.input.keyboard.createCursorKeys();
+  wasd = this.input.keyboard.addKeys({ 'W': Phaser.Input.Keyboard.KeyCodes.W, 'S': Phaser.Input.Keyboard.KeyCodes.S, 'A': Phaser.Input.Keyboard.KeyCodes.A, 'D': Phaser.Input.Keyboard.KeyCodes.D});
+  cursors = {...arrows, ...wasd};
+
+  cursors.check_pressed_up = function () {return this.up.isDown || this.W.isDown};
+  cursors.check_pressed_down = function () {return this.down.isDown || this.S.isDown};
+  cursors.check_pressed_left = function () {return this.left.isDown || this.A.isDown};
+  cursors.check_pressed_right = function () {return this.right.isDown || this.D.isDown};
+
+
   this.cameras.main.startFollow(player);
+  console.log(player)
 }   
 
 
@@ -103,12 +113,16 @@ function create() {
 function update() {
   var xMovement = 0;
   var yMovement = 0;
+  xMovement = cursors.check_pressed_left() ? -1 : cursors.check_pressed_right() ? 1 : 0;
+  yMovement = cursors.check_pressed_up() ? -1 : cursors.check_pressed_down() ? 1 : 0;
   
-  xMovement = cursors.left.isDown ? -1 : cursors.right.isDown? 1 : 0;
-  yMovement = cursors.up.isDown ? -1 : cursors.down.isDown ? 1 : 0;
-  
+  if (cursors.shift.isDown) {
+    xMovement = xMovement * 2;
+    yMovement = yMovement * 2;
+  }
 
-  if (xMovement != 0 && yMovement !=0) {
+
+  if (xMovement != 0 && yMovement != 0) {
     player.setVelocityX(xMovement * playerMoveSpeedDiagonal);
     player.setVelocityY(yMovement * playerMoveSpeedDiagonal);
     player.anims.play('right', true);
