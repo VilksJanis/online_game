@@ -20,4 +20,5 @@ services:
       - ./app:/home/node/app
     ports:
       - 8081:8080
+      - 8082:8082
     restart: always
