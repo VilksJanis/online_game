@@ -1,7 +1,18 @@
 const ACTION_REGISTER = 'register';
-const ACTION_UPDATE_STATE = 'update';
-const ACTION_EDIT_SETTINGS = 'settings';
 
+
+const MESSAGE_EVENT_HANDLERS = {
+  p: async (x, y) => {
+    console.log(x, y);
+  },
+  s: async (angle) => {
+    console.log(angle);
+
+  },
+  settings: async (event, callback) => {
+    console.log("true");
+  }
+};
 
 const ws = require('ws');
 const uuid = require('uuid');
@@ -39,8 +50,8 @@ WS.on('connection', socket => {
 
   // process messages
   socket.on('message', message => {
-    let [x, y, angle, clicked] = message.split(",");
-    console.log(socket.uuid, x, y, angle, clicked);
+    let [action, payload] = message.split(";");
+    MESSAGE_EVENT_HANDLERS[action](...payload.split(','));
   });
 
 

@@ -48,7 +48,6 @@ function init() {
   var fullscreen = this.sys.game.device.fullscreen;
 
   state_emit_timer = 0;
-  last_player_angle = 0;
 
   if (!fullscreen.available) {
     return;
@@ -107,17 +106,12 @@ function create() {
   cursors.check_pressed_right = function () { return this.right.isDown || this.D.isDown };
 
   this.input.on('pointermove', function (pointer) {
-    let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
-    player.angle = angle;
+    // let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
+    // player.angle = angle;
   }, this);
 
   this.input.on("pointerdown", function (pointer){
-    send_movement_state(
-      player.x,
-      player.y,
-      Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY),
-      1,
-      )
+    send_shoot(Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY))
   }, this);
 
   this.cameras.main.startFollow(player);
@@ -146,18 +140,15 @@ function update(time, delta) {
     player.anims.play('right', true);
   }
 
-  activity_detected = xMovement + yMovement != 0 ? true : last_player_angle != player.angle ? true : false;
+  activity_detected = (2 * xMovement) + yMovement != 0 ? true : false;
   state_emit_timer += delta;
 
   if (state_emit_timer >= 1000 || activity_detected) {
     send_movement_state(
       player.x,
       player.y,
-      player.angle,
-      0
     );
     state_emit_timer = 0;
-    last_player_angle = player.angle;
   }
 }
 
@@ -167,10 +158,10 @@ function render() {
 }
 
 
-function send_movement_state(x,y,angle,clicked) {
-  webSocket.send([Math.round(x),Math.round(y),angle.toFixed(4), clicked].join());
+function send_movement_state(x,y) {
+  webSocket.send("p;" + [Math.round(x),Math.round(y)].join());
 }
 
-function send_action(x,y,angle,action) {
-  console.log(x,y,angle,action);
+function send_shoot(angle) {
+  webSocket.send("s;" + angle.toFixed(4));
 }
