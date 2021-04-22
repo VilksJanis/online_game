@@ -2,6 +2,22 @@ const heightOutput = document.querySelector('#height');
 const widthOutput = document.querySelector('#width');
 const playerSprite = 'assets/sprites/player.png';
 const box = 'assets/images/blue_square_50_50.png';
+other_players = {};
+
+const MESSAGE_EVENT_HANDLERS = {
+  p: async (uuid, x, y) => {
+    if (UUID != uuid) {
+      update_player_position(uuid, x, y);
+    }
+  },
+  c: async (uuid, x, y, angle) => {
+    console.log(x, y, angle);
+  },
+  uuid: async (uuid) => {
+    UUID = uuid;
+  },
+};
+
 
 const playerMoveSpeedAx = 200;
 const playerMoveSpeedDiagonal = (1.414 * playerMoveSpeedAx) / 2;
@@ -11,8 +27,6 @@ function reportWindowSize() {
 }
 
 var platforms;
-
-
 
 window.onresize = reportWindowSize;
 window.addEventListener('resize', reportWindowSize);
@@ -42,7 +56,6 @@ var config = {
 
 const game = new Phaser.Game(config);
 
-
 function init() {
   var canvas = this.sys.game.canvas;
   var fullscreen = this.sys.game.device.fullscreen;
@@ -64,14 +77,20 @@ function init() {
 function preload() {
   this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
   this.load.image('box', box);
+  webSocket.onmessage = function (event) {
+    let [action, payload] = event.data.split(";");
+    MESSAGE_EVENT_HANDLERS[action](...payload.split(','));
+  };
+  webSocket.send("uuid;");
 }
 
 function create() {
   player = this.physics.add.sprite(100, 450, 'player');
+  other_players = {};
   platforms = this.physics.add.staticGroup();
 
   platforms.create(600, 400, 'box');
-  platforms.create(100, 250, 'box');
+  platforms.create(300, 250, 'box');
 
   this.physics.add.collider(player, platforms);
 
@@ -110,8 +129,9 @@ function create() {
     // player.angle = angle;
   }, this);
 
-  this.input.on("pointerdown", function (pointer){
-    send_shoot(Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY))
+  this.input.on("pointerdown", function (pointer) {
+    let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
+    send_shoot(pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY, angle)
   }, this);
 
   this.cameras.main.startFollow(player);
@@ -158,10 +178,22 @@ function render() {
 }
 
 
-function send_movement_state(x,y) {
-  webSocket.send("p;" + [Math.round(x),Math.round(y)].join());
+function send_movement_state(x, y) {
+  webSocket.send("p;" + [Math.floor(x), Math.floor(y)].join());
 }
 
-function send_shoot(angle) {
-  webSocket.send("s;" + angle.toFixed(4));
+function send_shoot(x, y, angle) {
+  webSocket.send("c;" + [Math.floor(x), Math.floor(y), angle.toFixed(4)].join());
+}
+
+
+function update_player_position(uuid, x, y) {
+  if (other_players[uuid] != undefined) {
+    other_players[uuid].x = parseFloat(x);
+    other_players[uuid].y = parseFloat(y);
+  } else {
+    sprite = game.scene.scenes[0].physics.add.sprite(parseFloat(x), parseFloat(y), 'player');
+    game.scene.scenes[0].physics.add.collider(player, platforms);
+    other_players[uuid] = sprite;
+  }
 }
