@@ -1,3 +1,5 @@
+global.__basedir = __dirname;
+
 const APP_PORT = parseInt(process.env.APP_PORT);
 
 const express = require('express');
