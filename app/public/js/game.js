@@ -1,8 +1,12 @@
 const heightOutput = document.querySelector('#height');
 const widthOutput = document.querySelector('#width');
 const playerSprite = 'assets/sprites/player.png';
+const otherPlayerSprite = 'assets/sprites/player_2.png';
+
 const box = 'assets/images/blue_square_50_50.png';
 other_players = {};
+
+
 
 const MESSAGE_EVENT_HANDLERS = {
   p: async (uuid, x, y) => {
@@ -16,6 +20,11 @@ const MESSAGE_EVENT_HANDLERS = {
   uuid: async (uuid) => {
     UUID = uuid;
   },
+  disconnect: async (uuid) => {
+    if (other_players[uuid] != undefined) {
+      other_players[uuid].destroy();
+    }
+  }
 };
 
 
@@ -76,6 +85,8 @@ function init() {
 
 function preload() {
   this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
+
   this.load.image('box', box);
   webSocket.onmessage = function (event) {
     let [action, payload] = event.data.split(";");
@@ -86,6 +97,7 @@ function preload() {
 
 function create() {
   player = this.physics.add.sprite(100, 450, 'player');
+
   other_players = {};
   platforms = this.physics.add.staticGroup();
 
@@ -192,7 +204,7 @@ function update_player_position(uuid, x, y) {
     other_players[uuid].x = parseFloat(x);
     other_players[uuid].y = parseFloat(y);
   } else {
-    sprite = game.scene.scenes[0].physics.add.sprite(parseFloat(x), parseFloat(y), 'player');
+    sprite = game.scene.scenes[0].physics.add.sprite(parseFloat(x), parseFloat(y), 'other_player');
     game.scene.scenes[0].physics.add.collider(player, platforms);
     other_players[uuid] = sprite;
   }
