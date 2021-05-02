@@ -1,3 +1,28 @@
+html,
 body {
-    background-color: black;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.form-signin {
+  padding: 35px;
+  background-color: #dee2e6;
+}
+
+.form-signin .checkbox {
+  font-weight: 400;
+}
+
+.form-signin .form-floating:focus-within {
+  z-index: 2;
+}
+
+.form-signin input[type="name"] {
+  margin-bottom: -1px;
 }
