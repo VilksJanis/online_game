@@ -9,20 +9,20 @@ other_players = {};
 
 
 const MESSAGE_EVENT_HANDLERS = {
-  p: async (uuid, x, y) => {
-    if (UUID != uuid) {
-      update_player_position(uuid, x, y);
+  p: async (uid, x, y) => {
+    if (UID != uid) {
+      update_player_position(uid, x, y);
     }
   },
-  c: async (uuid, x, y, angle) => {
+  c: async (uid, x, y, angle) => {
     console.log(x, y, angle);
   },
-  uuid: async (uuid) => {
-    UUID = uuid;
+  uid: async (uid) => {
+    UID = uid;
   },
-  disconnect: async (uuid) => {
-    if (other_players[uuid] != undefined) {
-      other_players[uuid].destroy();
+  disconnect: async (uid) => {
+    if (other_players[uid] != undefined) {
+      other_players[uid].destroy();
     }
   }
 };
@@ -92,7 +92,7 @@ function preload() {
     let [action, payload] = event.data.split(";");
     MESSAGE_EVENT_HANDLERS[action](...payload.split(','));
   };
-  webSocket.send("uuid;");
+  webSocket.send("uid;");
 }
 
 function create() {
@@ -199,13 +199,13 @@ function send_shoot(x, y, angle) {
 }
 
 
-function update_player_position(uuid, x, y) {
-  if (other_players[uuid] != undefined) {
-    other_players[uuid].x = parseFloat(x);
-    other_players[uuid].y = parseFloat(y);
+function update_player_position(uid, x, y) {
+  if (other_players[uid] != undefined) {
+    other_players[uid].x = parseFloat(x);
+    other_players[uid].y = parseFloat(y);
   } else {
     sprite = game.scene.scenes[0].physics.add.sprite(parseFloat(x), parseFloat(y), 'other_player');
     game.scene.scenes[0].physics.add.collider(player, platforms);
-    other_players[uuid] = sprite;
+    other_players[uid] = sprite;
   }
 }

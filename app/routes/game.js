@@ -1,7 +1,7 @@
 const express = require('express');
-const redis = require("redis");
 var path = require('path');
 
+require(__basedir + '/services/game_websocket')
 
 let route_game = express.Router()
 route_game.get('/', function (req, res) {
