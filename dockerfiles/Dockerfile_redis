@@ -1,0 +1,9 @@
+FROM redislabs/redismod:latest
+
+COPY ./redis/redis_functions /functions
+COPY ./redis/start_redis.sh /start_redis.sh
+
+RUN chmod +x /start_redis.sh
+
+ENTRYPOINT ["bash"]
+CMD ["/start_redis.sh"]

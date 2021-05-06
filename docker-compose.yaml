@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   redis:
-    image: 'redislabs/redismod:latest'
+    build:
+      dockerfile: ./dockerfiles/Dockerfile_redis
+      context: .
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
       - DISABLE_COMMANDS=FLUSHDB,FLUSHALL,CONFIG,HSCAN
@@ -13,6 +15,7 @@ services:
     restart: always
   backend:
     build:
+      dockerfile: ./dockerfiles/Dockerfile_node_backend
       context: .
     environment:
       - NODE_ENV=development
