@@ -1,12 +1,22 @@
 const heightOutput = document.querySelector('#height');
 const widthOutput = document.querySelector('#width');
-const playerSprite = 'assets/sprites/player.png';
-const otherPlayerSprite = 'assets/sprites/player_2.png';
+const playerSprite = '/sprites/player.png';
+const otherPlayerSprite = '/sprites/player_2.png';
 
-const box = 'assets/images/blue_square_50_50.png';
+const box = '/images/blue_square_50_50.png';
 other_players = {};
 
+var loc = window.location, ws_uri;
+if (loc.protocol === "https:") {
+  ws_uri = "wss:";
+} else {
+  ws_uri = "ws:";
+}
+ws_uri += "//" + loc.hostname;
+ws_uri += ':' + 8082;
+ws_uri += loc.pathname;
 
+var webSocket = new WebSocket(ws_uri);
 
 const MESSAGE_EVENT_HANDLERS = {
   p: async (uid, x, y) => {
@@ -17,13 +27,25 @@ const MESSAGE_EVENT_HANDLERS = {
   c: async (uid, x, y, angle) => {
     console.log(x, y, angle);
   },
-  uid: async (uid) => {
-    UID = uid;
-  },
   disconnect: async (uid) => {
     if (other_players[uid] != undefined) {
       other_players[uid].destroy();
     }
+  },
+  uid: async (is_valid) => {
+    if (!is_valid) {
+      unset_identity();
+      await register();
+      webSocket.send("uid;" + localStorage.getItem('UID') + ',' + localStorage.getItem('SEC'));
+    }
+  },
+  gid: async (is_valid) => {
+    if (!is_valid) {
+      window.location.href = "/";
+    }
+  },
+  settings: async (settings) => {
+    console.log(settings);
   }
 };
 
@@ -59,11 +81,13 @@ var config = {
     preload,
     create,
     update,
-    render
   }
 };
 
 const game = new Phaser.Game(config);
+var player = null;
+var last_x = null;
+var last_y = null;
 
 function init() {
   var canvas = this.sys.game.canvas;
@@ -81,18 +105,37 @@ function init() {
     if (document.fullscreenElement) { return; }
     canvas[fullscreen.request]();
   });
+
+  this.events.on('postupdate', function() {
+    if (player.x != last_x || player.y != last_y){
+      send_movement_state(
+        player.x,
+        player.y,
+      );
+      last_x = player.x;
+      last_y = player.y;
+    }
+
+});
+
 }
 
 function preload() {
-  this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
+  webSocket.onopen = function (event) {
+    webSocket.send("uid;" + localStorage.getItem('UID') + ',' + localStorage.getItem('SEC'));
+  };
 
-  this.load.image('box', box);
   webSocket.onmessage = function (event) {
     let [action, payload] = event.data.split(";");
     MESSAGE_EVENT_HANDLERS[action](...payload.split(','));
   };
-  webSocket.send("uid;");
+
+
+  this.load.path = "/assets";
+  this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
+  this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
+  this.load.image('box', box);
+
 }
 
 function create() {
@@ -174,14 +217,6 @@ function update(time, delta) {
 
   activity_detected = (2 * xMovement) + yMovement != 0 ? true : false;
   state_emit_timer += delta;
-
-  if (state_emit_timer >= 1000 || activity_detected) {
-    send_movement_state(
-      player.x,
-      player.y,
-    );
-    state_emit_timer = 0;
-  }
 }
 
 

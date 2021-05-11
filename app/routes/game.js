@@ -1,13 +1,45 @@
 const express = require('express');
-var path = require('path');
+const path = require('path');
+const redis = require("redis");
 
-require(__basedir + '/services/game_websocket')
+require(__basedir + '/services/game_websocket');
 
-let route_game = express.Router()
+const redis_client = redis.createClient(6379, 'redis');
+
+let route_game = express.Router();
+
 route_game.get('/', function (req, res) {
     res.sendFile(path.join(__basedir, 'views/game.html'));
 });
 
 
+route_game.post('/find', function (req, res, next) {
+    redis_client.send_command("RG.TRIGGER", ["find_game", req.body.uid], (err, data) => {
+        console.log(data)
+        if (data != undefined && data != null && data[0] != "None") {
+            res.send(data[0])
+        } else {
+            res.send(false);
+        }
+    });
+});
 
-module.exports = route_game
+
+route_game.post('/instances/:g_id', function (req, res) {
+    redis_client.send_command("RG.TRIGGER", ["join_game", req.body.uid], (err, data) => {
+        if (data != undefined && data != null && data[0] != 0) {
+            res.send('/game/instances/'+req.params.g_id);
+        } else {
+            res.send("false");
+        }
+    });
+});
+
+
+route_game.get('/instances/:g_id', function (req, res) {
+    res.sendFile(path.join(__basedir, 'views/game.html'));
+});
+  
+  
+
+module.exports = route_game;

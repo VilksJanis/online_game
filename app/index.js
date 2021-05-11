@@ -5,19 +5,19 @@ const APP_PORT = parseInt(process.env.APP_PORT);
 const express = require('express');
 const home = require('./routes/home.js');
 const game = require('./routes/game.js');
+const api = require('./routes/api.js');
+
 
 const app = express();
+app.use(express.json())
 app.use('/', home);
 app.use('/game', game)
+app.use('/api', api)
 app.use(express.static('./public'));
-
-console.log(__dirname)
 
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'views/home.html'));
 });
-
-
 
 app.listen(APP_PORT, () => {
   console.log(`node running: http://localhost:${APP_PORT}`)

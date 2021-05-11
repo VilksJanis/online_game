@@ -1,5 +1,10 @@
 const express = require('express');
-var path = require('path');
+const path = require('path');
+const uuid = require('uuid');
+const redis = require("redis");
+
+const redis_client = redis.createClient(6379, 'redis');
+
 
 let route_home = express.Router()
 
