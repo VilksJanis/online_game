@@ -1,8 +1,7 @@
+unset_identity();
+
 async function join_game() {
-    unset_identity();
-
     await register();
-
     let playername = $("#playerName").val();
     let theme = $("#teamSelect .carousel-item.active").id;
     localStorage.setItem('playerName', playername);
@@ -15,7 +14,7 @@ async function join_game() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                uid: localStorage.getItem("UID")
+                uid: localStorage.getItem("UID"),
             })
         }
     )
@@ -30,7 +29,8 @@ async function join_game() {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            uid: localStorage.getItem("UID")
+                            uid: localStorage.getItem("UID"),
+                            playername: playername
                         })
                     })
                     .then(response => response.text())

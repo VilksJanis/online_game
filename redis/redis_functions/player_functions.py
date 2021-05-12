@@ -43,29 +43,65 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         
         self.action_mapping = {
             "p": self.move,
-            "c": self.click
+            "c": self.click,
+            "u": self.use,
+            "l": self.leave,
+            "m": self.message,
         }
 
     def register_command(self):
         GB('StreamReader', self.command_name).foreach(lambda message: self.parse_action(message["key"], message["value"])).register(self.command_name)
 
     def parse_action(self, stream_name, payload):
+        """
+        Handle incoming player action. 
+        Arguments:
+            stream_name [GAME:gid]
+            payload [str]  
+        """
+        gid = stream_name.split(":")[1]
+
         # Publish the action to other game instance users via PubSub:
-        execute('PUBLISH', stream_name.split(":")[1], f"{payload['action']};{payload['action_args']}")
+        execute('PUBLISH', gid, f"{payload['action']};{payload['action_args']}")
 
-        # Parse the command to receive an updated game state:
-        new_state = self.action_mapping[payload["action"]](*payload["action_args"].split(","))
-
-    def move(self, uuid, x, y):
-        pass
-
-    def click(self, uuid, x, y):
-        pass
-
-    def leave(self, uuid, x, y):
-        pass
+        # Parse the command to update game state:
+        self.action_mapping.get(payload["action"], self.not_implemented)(gid, *payload["action_args"].split(","))
 
 
+    def move(self, _, uid, x, y):
+        """
+        Handle player move event.
+        """
+        self.not_implemented(_)
+
+    def click(self, _, uid, x, y, angle):
+        """
+        Handle player main key pressed event.
+        """
+        self.not_implemented(_)
+
+    def use(self, _, uid, x, y, angle):
+        """
+        Handle player use key pressed event.
+        """
+        self.not_implemented(_)
+
+    def message(self, _, uid, scope, message):
+        """
+        Handle player message event.
+        """
+        self.not_implemented(_)
+
+    def leave(self, gid, uid):
+        """
+        Handle player leave event.
+            Execute Redis gears function `leave_game`            
+        """
+
+        execute("RG.TRIGGER", "leave_game", uid, gid)
+
+    def not_implemented(self, _):
+        return
 
 player_functions = [
     ParsePlayerFunctionBuilder()

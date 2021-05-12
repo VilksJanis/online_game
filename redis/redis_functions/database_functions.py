@@ -56,7 +56,7 @@ class CreateNewGameFunctionBuilder(BaseFunctionBuilder):
                 RG.TRIGGER create_new_game USER:123 1 secret123
         """
 
-        def subcall(user, private=0, secret=None):
+        def subcall(user, private=0, secret=""):
             g_id = uuid.uuid4().hex
             key = f"GAME:{g_id}"
 
@@ -67,7 +67,7 @@ class CreateNewGameFunctionBuilder(BaseFunctionBuilder):
         (
             GB('CommandReader')
             .map(lambda x: subcall(*x[1:]))
-            .register(trigger=self.command_name)
+            .register(trigger=self.command_name, mode='sync')
         )
 
 
@@ -87,7 +87,7 @@ class CreateUserFunctionBuilder(BaseFunctionBuilder):
                 RG.TRIGGER create_new_user hhaa Player1 '' aahh
         """
 
-        def subcall(uid, name, settings='{}', secret=None):
+        def subcall(uid, name, settings='{}', secret=""):
             key = f"USER:{uid}"
 
             execute("HSET", key, "name", name, "setttings", settings, "secret", str(secret))

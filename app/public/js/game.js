@@ -17,6 +17,7 @@ ws_uri += ':' + 8082;
 ws_uri += loc.pathname;
 
 var webSocket = new WebSocket(ws_uri);
+register();
 
 const MESSAGE_EVENT_HANDLERS = {
   p: async (uid, x, y) => {
@@ -27,16 +28,20 @@ const MESSAGE_EVENT_HANDLERS = {
   c: async (uid, x, y, angle) => {
     console.log(x, y, angle);
   },
-  disconnect: async (uid) => {
+  u: async (uid, x, y, angle) => {
+    console.log(x, y, angle);
+  },
+  l: async (uid) => {
     if (other_players[uid] != undefined) {
       other_players[uid].destroy();
     }
   },
+  j: async (uid, x, y) => {
+    update_player_position(uid, x, y);
+  },
   uid: async (is_valid) => {
     if (!is_valid) {
-      unset_identity();
-      await register();
-      webSocket.send("uid;" + localStorage.getItem('UID') + ',' + localStorage.getItem('SEC'));
+      window.location.href = "/";
     }
   },
   gid: async (is_valid) => {
@@ -44,9 +49,6 @@ const MESSAGE_EVENT_HANDLERS = {
       window.location.href = "/";
     }
   },
-  settings: async (settings) => {
-    console.log(settings);
-  }
 };
 
 
@@ -106,8 +108,8 @@ function init() {
     canvas[fullscreen.request]();
   });
 
-  this.events.on('postupdate', function() {
-    if (player.x != last_x || player.y != last_y){
+  this.events.on('postupdate', function () {
+    if (player.x != last_x || player.y != last_y) {
       send_movement_state(
         player.x,
         player.y,
@@ -116,7 +118,7 @@ function init() {
       last_y = player.y;
     }
 
-});
+  });
 
 }
 
@@ -128,6 +130,10 @@ function preload() {
   webSocket.onmessage = function (event) {
     let [action, payload] = event.data.split(";");
     MESSAGE_EVENT_HANDLERS[action](...payload.split(','));
+  };
+
+  webSocket.onclose  = function (event) {
+    window.location.href = "/";
   };
 
 
