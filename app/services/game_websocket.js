@@ -14,24 +14,32 @@ const MESSAGE_EVENT_HANDLERS = {
     c: async (socket, x, y, angle) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "c", "action_args", [socket.uid, x, y, angle].join());
     },
+    o: async (socket, angle) => {
+        redis_client.xadd("player_actions:" + socket.gid, '*', "action", "o", "action_args", [socket.uid, angle].join());
+    },
     u: async (socket, x, y, angle) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "u", "action_args", [socket.uid, x, y, angle].join());
     },
     l: async (socket) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "l", "action_args", [socket.uid].join());
     },
+    j: async (socket) => {
+        let x = Math.floor(Math.random() * 1000);
+        let y = Math.floor(Math.random() * 1000)
+        redis_client.xadd("player_actions:" + socket.gid, '*', "action", "j", "action_args", [socket.uid, x, y].join());
+    },
     uid: async (socket, uid, secret="") => {
         redis_client.hgetall("GAME:"+socket.gid,(err, game) => {
             if (game['user__'+uid] != undefined) {
+                subscribe_player_actions(socket);
                 socket.uid = uid;
                 socket.send("uid;" + true);
-                subscribe_player_actions(socket);
             } else {
                 redis_client.send_command("RG.TRIGGER", ["join_game", uid, socket.gid, secret], (err, data) => {
                     if (data != undefined && data != null) {
+                        subscribe_player_actions(socket);
                         socket.uid = uid;
                         socket.send("uid;" + true);
-                        subscribe_player_actions(socket);    
                     } else {
                         socket.send("uid;" + false);
                         socket.close();
@@ -79,4 +87,11 @@ function subscribe_player_actions(socket) {
         MESSAGE_EVENT_HANDLERS.l(socket);
         socket.subscription_client.quit();
     });
+}
+
+
+function spawn_player(socket) {
+    console.log(socket.uid);
+
+    socket.send("j;" + [socket.uid, x, y].join());
 }

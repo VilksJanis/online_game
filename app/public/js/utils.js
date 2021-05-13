@@ -1,5 +1,5 @@
-let UID = null;
-let SEC = null;
+let UID = localStorage.getItem('UID');
+let SEC = localStorage.getItem('UID');
 
 function unset_identity() {
     localStorage.removeItem('UID');

@@ -44,9 +44,11 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         self.action_mapping = {
             "p": self.move,
             "c": self.click,
+            "o": self.orientation,
             "u": self.use,
             "l": self.leave,
             "m": self.message,
+            "j": self.join
         }
 
     def register_command(self):
@@ -80,6 +82,12 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         """
         self.not_implemented(_)
 
+    def orientation(self, _, angle):
+        """
+        Handle player orientation change event.
+        """
+        return
+
     def use(self, _, uid, x, y, angle):
         """
         Handle player use key pressed event.
@@ -91,6 +99,15 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         Handle player message event.
         """
         self.not_implemented(_)
+
+    def join(self, gid, uid):
+        """
+        Handle player leave event.
+            Execute Redis gears function `leave_game`            
+        """
+
+        return
+
 
     def leave(self, gid, uid):
         """

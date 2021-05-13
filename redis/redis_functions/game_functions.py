@@ -1,6 +1,6 @@
 from datetime import datetime
 import time
-MAX_PLAYERS_IN_GAME = 4
+MAX_PLAYERS_IN_GAME = 1000
 
 
 class BaseFunctionBuilder():
