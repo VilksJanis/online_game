@@ -47,9 +47,13 @@ const MESSAGE_EVENT_HANDLERS = {
     }
   },
   c: async (uid, x, y, angle) => {
-    console.log(x, y, angle);
+    if (UID != uid) {
+      enemy_shoot(uid, x, y, angle)
+    } else {
+      // do nothing
+    }
   },
-  o: async (uid, x, y, angle) => {
+  o: async (uid, angle) => {
     if (UID != uid) {
       update_enemy_orientation(uid, angle)
     } else {
@@ -125,7 +129,7 @@ function preload() {
   // LOAD ALL ASSETS:
   this.load.path = "/assets";
   this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
-  this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
+  // this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
   this.load.spritesheet('projectile', projectile, { frameWidth: 24, frameHeight: 8 });
   this.load.image('box', box);
 }
@@ -201,7 +205,7 @@ function create() {
       var projectile = projectiles.get();
       if (projectile) {
         projectile.setScale(1.25, 1.5);
-        projectile.shoot(pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
+        projectile.shoot(player, angle - Math.PI);
         player.last_shot = 0;
       }
 
@@ -269,7 +273,7 @@ function update_enemy_position(uid, x, y) {
     enemies[uid].x = parseInt(x);
     enemies[uid].y = parseInt(y);
   } else {
-    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'other_player');
+    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
     game.scene.scenes[0].physics.add.collider(player, platforms);
     enemies[uid] = sprite;
   }
@@ -281,12 +285,27 @@ function update_enemy_orientation(uid, angle) {
   }
 }
 
+function enemy_shoot(uid, x, y, angle) {
+  var projectile = projectiles.get();
+
+  if (projectile) {
+    console.log("enemy shoot")
+    projectile.setScale(1.25, 1.5);
+    projectile.shoot(enemies[uid], parseFloat(angle) - Math.PI);
+    enemies[uid].anims.play('shoot', true);
+
+    player.last_shot = 0;
+  }
+
+
+}
+
 
 
 function spawn_player(uid, x, y) {
   if (UID != uid) {
     // SPAWN ENEMY
-    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'other_player');
+    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
     game.scene.scenes[0].physics.add.collider(player, platforms);
     enemies[uid] = sprite;
   } else {
@@ -330,12 +349,10 @@ var Projectile = new Phaser.Class({
     this.setDepth(-1);
   },
 
-  shoot: function (x, y, angle) {
+  shoot: function (_player, angle) {
     this.setActive(true);
     this.setVisible(true);
-    this.setPosition(player.x, player.y);
-
-    var angle = Phaser.Math.Angle.Between(x, y, player.x, player.y);
+    this.setPosition(_player.x, _player.y);
     this.setRotation(angle);
     this.incX = Math.cos(angle);
     this.incY = Math.sin(angle);
