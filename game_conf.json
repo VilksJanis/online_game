@@ -1,0 +1,32 @@
+{
+    "debug": "0",
+    "websocket": {
+        "host": "127.0.0.1",
+        "port": "8082"
+    },
+    "backend": {
+        "host": "127.0.0.1",
+        "port": "8080"
+    },
+    "world": {
+        "bounds": {
+            "x": 0,
+            "y": 0,
+            "l": 2000,
+            "w": 2000
+        }
+    },
+    "player": {},
+    "obstacles": [
+        {
+            "x": 600,
+            "y": 400,
+            "sprite": "box"
+        },
+        {
+            "x": 300,
+            "y": 250,
+            "sprite": "box"
+        }
+    ]
+}

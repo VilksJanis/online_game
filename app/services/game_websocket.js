@@ -1,12 +1,16 @@
 const WebSocket = require('ws');
 const uuid = require('uuid');
 const redis = require("redis");
+var fs = require('fs');
+
+var config = JSON.parse(fs.readFileSync('/game_config/game_conf.json', 'utf8'));
+
 const redis_client = redis.createClient(6379, 'redis');
+const WEBSOCKET_PORT = parseInt(config.websocket.port);
 
 const letterNumber = /^[0-9a-zA-Z]+$/;
 not_implemented = () => { };
 
-const WS_PORT = parseInt(process.env.WEBSOCKET_PORT);
 const MESSAGE_EVENT_HANDLERS = {
     p: async (socket, x, y) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "p", "action_args", [socket.uid, x, y].join());
@@ -52,7 +56,7 @@ const MESSAGE_EVENT_HANDLERS = {
 };
 
 
-const websocket_server = new WebSocket.Server({ port: WS_PORT });
+const websocket_server = new WebSocket.Server({port: WEBSOCKET_PORT});
 
 websocket_server.on('connection', (socket, req) => {
     load_gid(req.url, socket);
@@ -87,11 +91,4 @@ function subscribe_player_actions(socket) {
         MESSAGE_EVENT_HANDLERS.l(socket);
         socket.subscription_client.quit();
     });
-}
-
-
-function spawn_player(socket) {
-    console.log(socket.uid);
-
-    socket.send("j;" + [socket.uid, x, y].join());
 }

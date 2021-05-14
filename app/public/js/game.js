@@ -4,7 +4,7 @@ const otherPlayerSprite = '/sprites/player_2.png';
 const projectile = '/sprites/projectile.png'
 const box = '/images/blue_square_50_50.png';
 
-const playerMoveSpeedAx = 300;
+const playerMoveSpeedAx = 400;
 const playerMoveSpeedDiagonal = (1.414 * playerMoveSpeedAx) / 2;
 
 // WEBSOCKET PARSE PATH:
@@ -129,17 +129,15 @@ function preload() {
   // LOAD ALL ASSETS:
   this.load.path = "/assets";
   this.load.spritesheet('player', playerSprite, { frameWidth: 32, frameHeight: 32 });
-  // this.load.spritesheet('other_player', otherPlayerSprite, { frameWidth: 32, frameHeight: 32 });
   this.load.spritesheet('projectile', projectile, { frameWidth: 24, frameHeight: 8 });
   this.load.image('box', box);
 }
-
 
 // GAME CREATE CALL;
 function create() {
 
   // DEFINE WORLD / WORLD BOUNDS
-  this.physics.world.setBounds(0, 0, 2000, 2000, 5);            // set outer bounds
+  this.physics.world.setBounds(0, 0, 2000, 2000, 1);            // set outer bounds
   this.physics.world.on('worldbounds', onWorldBounds);          // set event when objects collide with outer walls
   var bound_rect = this.add.rectangle(1000, 1000, 6000, 6000);  // draw rectangle around bounds
   bound_rect.setStrokeStyle(4000, 0x343a40);                     // stylize
@@ -147,8 +145,8 @@ function create() {
 
   // DEFINE PLAYER 
   player = this.physics.add.sprite(0, 0, 'player');
+  player.setScale(1.5, 1.5);
   player.setVisible(false);
-  player.body.collideWorldBounds = true;
   player.last_shot = 0;
   player.state_emit_timer = 0;
   this.cameras.main.startFollow(player);
@@ -157,18 +155,36 @@ function create() {
   // DEFINE OBSTACLES\
   platforms = this.physics.add.staticGroup();
   platforms.create(600, 400, 'box');
-  platforms.create(300, 250, 'box');
-
+  platforms.create(300, 600, 'box');
+  platforms.create(700, 250, 'box');
+  platforms.create(1000, 1000, 'box');
+  platforms.create(1200, 700, 'box');
+  platforms.create(1200, 250, 'box');
+  platforms.create(700, 1800, 'box');
+  platforms.create(397, 1700, 'box');
+  platforms.create(1700, 250, 'box');
+  platforms.create(1500, 397, 'box');
+  platforms.create(1500, 1800, 'box');
+  platforms.create(1700, 1500, 'box');
+  platforms.create(397, 700, 'box');
+  platforms.create(1800, 250, 'box');
+  platforms.create(1800, 700, 'box');
 
   // DEFINE PROJECTILES
   projectiles = this.physics.add.group({
     classType: Projectile,
     runChildUpdate: true,
-    collideWorldBounds: true,
+    collideWorldBounds: false,
   });
 
   //  DEFINE COLLIDERS
+  player.body.collideWorldBounds = true;
+
   this.physics.add.collider(player, platforms);
+  this.physics.add.collider(projectiles, player, onPlayerHit);
+  this.physics.add.collider(projectiles, platforms, onProjectileHit);
+
+
   this.anims.create({
     key: 'shoot',
     frames: this.anims.generateFrameNumbers('player', { start: 0, end: 10 }),
@@ -177,7 +193,19 @@ function create() {
   });
 
 
-  // DEFINE OVERLAPS:
+  // scoreBoard = this.add.container(player.x - 20, player.y + 24);
+  // scoreText = this.add.text(player.x - 20, player.y + 24, "SCORE: 0", { fontSize: '16px', color: '#fff' });
+  // scoreBoard.add(scoreText);
+
+  // this.tweens.add({
+  //   targets: scoreBoard,
+  //   x: scoreBoard.x + player.x,
+  //   ease: 'Linear',
+  //   duration: 1,
+  //   delay: 1,
+  //   yoyo: false,
+  //   repeat: -1
+  // });
 
 
   // DEFINE CONTROLS:
@@ -200,11 +228,11 @@ function create() {
   }, this);
 
   this.input.on("pointerdown", function (pointer) {
-    if (player.last_shot > 250) {
+    if (player.last_shot > 250 && player.active) {
       let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
       var projectile = projectiles.get();
       if (projectile) {
-        projectile.setScale(1.25, 1.5);
+        projectile.setScale(2, 2);
         projectile.shoot(player, angle - Math.PI);
         player.last_shot = 0;
       }
@@ -253,8 +281,10 @@ function update(time, delta) {
   }
 
   player.last_shot = player.last_shot + delta;
-}
+  // scoreText.x = player.x - 20;  
+  // scoreText.y = player.y + 24;  
 
+}
 
 function send_movement_state(x, y) {
   webSocket.send("p;" + [parseInt(x), parseInt(y)].join());
@@ -275,6 +305,9 @@ function update_enemy_position(uid, x, y) {
   } else {
     sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
     game.scene.scenes[0].physics.add.collider(player, platforms);
+    game.scene.scenes[0].physics.add.collider(player, sprite);
+    game.scene.scenes[0].physics.add.collider(projectiles, sprite, onPlayerHit);
+    sprite.setScale(1.5, 1.5);
     enemies[uid] = sprite;
   }
 }
@@ -288,12 +321,10 @@ function update_enemy_orientation(uid, angle) {
 function enemy_shoot(uid, x, y, angle) {
   var projectile = projectiles.get();
 
-  if (projectile) {
-    console.log("enemy shoot")
-    projectile.setScale(1.25, 1.5);
+  if (projectile && enemies[uid].active) {
+    projectile.setScale(2, 2);
     projectile.shoot(enemies[uid], parseFloat(angle) - Math.PI);
     enemies[uid].anims.play('shoot', true);
-
     player.last_shot = 0;
   }
 
@@ -301,12 +332,15 @@ function enemy_shoot(uid, x, y, angle) {
 }
 
 
-
 function spawn_player(uid, x, y) {
   if (UID != uid) {
     // SPAWN ENEMY
     sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
+    sprite.setScale(1.5, 1.5);
     game.scene.scenes[0].physics.add.collider(player, platforms);
+    game.scene.scenes[0].physics.add.collider(player, sprite);
+    game.scene.scenes[0].physics.add.collider(projectiles, sprite, onPlayerHit);
+
     enemies[uid] = sprite;
   } else {
     // SPAWN SELF
@@ -321,16 +355,21 @@ function onWorldBounds(body) {
   p.setVisible(false);
 }
 
+function onProjectileHit(projectile, object) {
+  projectile.disableBody(true, true);
+}
+
+function onPlayerHit(projectile, object) {
+  projectile.disableBody(true, true);
+  object.disableBody(true, true);
+}
 
 var Projectile = new Phaser.Class({
   Extends: Phaser.Physics.Arcade.Sprite,
   initialize: function Projectile(scene) {
 
     Phaser.GameObjects.Sprite.call(this, scene, 0, 0, 'projectile');
-    this.incX = 0;
-    this.incY = 0;
     this.lifespan = 0;
-    this.speed = Phaser.Math.GetSpeed(1000, 1);
     scene.anims.create({
       key: 'projectile_shoot',
       frames: scene.anims.generateFrameNumbers('projectile', { start: 0, end: 5 }),
@@ -338,40 +377,39 @@ var Projectile = new Phaser.Class({
       repeat: -1
     });
 
-    scene.add.existing(this);
-    scene.physics.add.existing(this);
-    this.setCollideWorldBounds(true);
-    this.body.onWorldBounds = true;
-    this.setBounce(1, 1)
-
-
     this.anims.play('projectile_shoot', true);
     this.setDepth(-1);
+
   },
 
   shoot: function (_player, angle) {
-    this.setActive(true);
-    this.setVisible(true);
-    this.setPosition(_player.x, _player.y);
+    this.enableBody( // Enable physics body
+      true, // Reset body and game object, at (x, y)
+      _player.x,
+      _player.y,
+      true, // Activate sprite
+      true  // Show sprite
+    );
+
     this.setRotation(angle);
-    this.incX = Math.cos(angle);
-    this.incY = Math.sin(angle);
-    this.lifespan = 1600;
+    const vx = Math.cos(this.rotation - Math.PI) * 40
+    const vy = Math.sin(this.rotation - Math.PI) * 40
+
+    this.setPosition(_player.x + vx, _player.y + vy);
+
+    game.scene.scenes[0].physics.velocityFromRotation(this.rotation - Math.PI, 1000, this.body.velocity)
+    this.lifespan = 2000;
   },
 
   update: function (time, delta) {
     this.lifespan -= delta;
-    this.x -= this.incX * (this.speed * delta);
-    this.y -= this.incY * (this.speed * delta);
     if (this.lifespan <= 0) {
-      this.setActive(false);
-      this.setVisible(false);
+      this.disableBody( // Stop and disable physics body
+        true, // Deactivate sprite (active=false)
+        true  // Hide sprite (visible=false)
+      );
     }
   }
 });
 
 
-window.addEventListener('resize', () => {
-  console.log(window.innerWidth, window.innerHeight)
-  game.scale.resize(window.innerWidth, window.innerHeight);
-});
