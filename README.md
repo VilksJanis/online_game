@@ -47,33 +47,33 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
     - Triggered by calling `RG.TRIGGER create_new_game USER:p1_uid 1 secret123`;
     - returns `game_id`;
 - `create_new_user` (CommandReader, args: [`uid`], optional: [`settings`, `secret`]):
-    - Creates a hash (`HSET`) 
-    - Creates an expiry for the hash (`EXPIRE`)
-    - Triggered by calling `RG.TRIGGER create_new_user p1_uid Player1 '' aahh`
-    - returns `user_id`
+    - Creates a hash (`HSET`) ;
+    - Creates an expiry for the hash (`EXPIRE`);
+    - Triggered by calling `RG.TRIGGER create_new_user p1_uid Player1 '' aahh`;
+    - returns `user_id`;
 - `find_game` (CommandReader, optional: [`game_id`]):
-    - If game_id provided then executes `FT.SEARCH` (see RediSearch bellow)
-    - If game not found then trigger `create_new_game`
-    - Triggered by calling `RG.TRIGGER find_game p1_uid`
-    - returns `game_id`
+    - If game_id provided then executes `FT.SEARCH` (see RediSearch bellow);
+    - If game not found then trigger `create_new_game`;
+    - Triggered by calling `RG.TRIGGER find_game p1_uid`;
+    - returns `game_id`;
 - `join_game` (CommandReader, args: [`user_id`, `game_id`]):
-    - Triggered by calling `RG.TRIGGER join_game p1_uid g1_gid secret123`
-    - returns `game_id`
-- `leave_game` (CommandReader):
-    - Creates a hash (`HSET`) 
-    - Creates an expiry for the hash (`EXPIRE`)
-    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
-    - returns `game_id`
-- `user_authorized` (CommandReader):
-    - Creates a hash (`HSET`) 
-    - Creates an expiry for the hash (`EXPIRE`)
-    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
-    - returns `game_id`
-- `player_actions` (StreamReader):
-    - Creates a hash (`HSET`) 
-    - Creates an expiry for the hash (`EXPIRE`)
-    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
-    - returns `game_id`
+    - Assigns the user to the game_instance (`HSET`)
+    - Increments player count of the game_instance (`HINCRBY`);
+    - Triggered by calling `RG.TRIGGER join_game p1_uid g1_gid secret123`;
+    - returns `game_id`;
+- `leave_game` (CommandReader, args: [ `user_ud`, `game_id`]):
+    - Deletes hash field (`HDEL`);
+    - Decrements player count of the game instance (`HINCRBY`);
+    - Triggered by calling ` RG.TRIGGER leave_game p1_uid g1_gid`;
+    - returns `game_id`;
+- `user_authorized` (CommandReader, args: [`user_ud`, `game_id`]):
+    - Executes three (`HGET`) calls to determine if user is a part of the game instance;
+    - returns `game_id`;
+- `player_actions` (StreamReader, args: [`action`, `action_args`]):
+    - Parses an event received from the user; 
+    - Adds a state to `game_states` stream (`XADD`);
+    - Publishes state change to subscribers (`PUBLISH`);
+    - Triggered by calling `XADD player_actions:g1_gid action p action_args "10,100,0"`.
 
 
 ## RediSearch
