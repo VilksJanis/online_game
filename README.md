@@ -10,9 +10,9 @@ World`s first Active-Active Geo-Distributed* Multiplayer top-down arcade shooter
 
 Join the arena, avoid projectiles by moving around and dominate others by landing hits!
 
-<a><img src="docs/game_view.png" width="33%" height="auto"></a>
-<a><img src="docs/game_view_2.png" width="33%" height="auto"></a>
-<a><img src="docs/game_view_3.png" width="33%" height="auto"></a>
+<a><img src="docs/game_view.png" width="32%" height="auto"></a>
+<a><img src="docs/game_view_2.png" width="32%" height="auto"></a>
+<a><img src="docs/game_view_3.png" width="32%" height="auto"></a>
 
 ---
 
