@@ -17,7 +17,7 @@
     "redis_modules": ["RedisGears", "RediSearch"],
     "app_image_urls": [
     ],
-    "youtube_url": "https://youtu.be/Bv3i4peidow",
+    "youtube_url": "https://www.youtube.com/watch?v=Bv3i4peidow",
     "special_tags": ["CRDB"],
     "verticals": [],
     "markdown": "https://github.com/VilksJanis/online_game/blob/main/README.mdd"
