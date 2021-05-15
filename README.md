@@ -10,9 +10,9 @@ World`s first Active-Active Geo-Distributed* Multiplayer top-down arcade shooter
 
 Join the arena, avoid projectiles by moving around and dominate others by landing hits!
 
-<a href="https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true"><img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true" width="32%" height="auto"></a>
-<a href="https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true"><img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view_2.png?raw=true" width="32%" height="auto"></a>
-<a href="https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true"><img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view_3.png?raw=true" width="32%" height="auto"></a>
+<img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true" width="32%" height="auto">
+<img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view_2.png?raw=true" width="32%" height="auto">
+<img src="https://github.com/VilksJanis/online_game/blob/main/docs/game_view_3.png?raw=true" width="32%" height="auto">
 
 ---
 ![game_view_1](https://github.com/VilksJanis/online_game/blob/main/docs/game_view.png?raw=true)
