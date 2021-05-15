@@ -1,0 +1,24 @@
+  
+{
+    "app_name": "Online Arcade",
+    "description": "World`s first Active-Active Geo-Distributed* Multiplayer top-down arcade shooter. App is made to showcase Redis and Redis Labs modules and their capabilities. This game is literally built on Redis!",
+    "hidden": "true",
+    "rank": "21",
+    "type": "Full App",
+    "contributed_by": "Community",
+    "repo_url": "https://github.com/VilksJanis/online_game",
+    "download_url": "https://github.com/VilksJanis/online_game/archive/refs/heads/main.zip",
+    "hosted_url": "",
+    "quick_deploy": "false",
+    "deploy_buttons": [],
+    "language": ["Python", "JavaScript"],
+    "redis_commands": ["XADD", "PUBLISH", "HSET", "HGET", "HGETALL", "HINCRBY", "HDEL", "EXPIRE", "RG.PYEXECUTE", "RG.DUMPREGISTRATIONS", "RG.TRIGGER", "FT.CREATE", "FT.SEARCH"],
+    "redis_features": [],
+    "redis_modules": ["RedisGears", "RediSearch"],
+    "app_image_urls": [
+    ],
+    "youtube_url": "https://youtu.be/Bv3i4peidow",
+    "special_tags": ["CRDB"],
+    "verticals": [],
+    "markdown": "https://github.com/VilksJanis/online_game/blob/main/README.mdd"
+}

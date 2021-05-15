@@ -90,9 +90,8 @@ class JoinGameFunctionBuilder(BaseFunctionBuilder):
     def register_command(self):
         """
             Determines best public server to join to.
-                 - Assings User to the Room.
+                 - Assings User to the Game.
                  - Increments playercount
-                 - Publishes a notification
             Arguments:
                 user, game, secret (optional)
             Returns:

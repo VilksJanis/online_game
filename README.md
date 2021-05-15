@@ -1,4 +1,4 @@
-# Active-Actove Geo-Distributed Multiplayer top-down arcade shooter
+# Active-Active Geo-Distributed Multiplayer top-down arcade shooter
 
 [Redis Labs "Build on Redis" 2021 hackathon](https://hackathons.redislabs.com/hackathons/build-on-redis-hackathon) participation project.
 
