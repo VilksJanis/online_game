@@ -31,17 +31,37 @@ Application stack consists of three main components:
     - Serves as a WebServer;
     - Provides a WebSocket server;
     - Enables Redis API;
-    - Ensures User -> Redis -> User event communication
+    - Ensures User -> Redis -> User event communication;
 * Redis
     - Uses RedisGears to define game functions (functionality);
     - Uses RediSearch to enable robust querying experience;
-    - Stores game state (enables data decoupling from node.js backend)
-    - Validates user inputs (using RedisGears functions)
-    - Provides Game API (again, RedisGears)
+    - Stores game state (enables data decoupling from node.js backend);
+    - Validates user inputs (using RedisGears functions);
+    - Provides Game API (again, RedisGears).
+
+## RedisGears function list:
+
+- create_new_game ("CommandReader")
+- create_new_user ("CommandReader")
+- find_game ("CommandReader")
+- join_game ("CommandReader")
+- leave_game ("CommandReader")
+- user_authorized ("CommandReader")
+- player_actions ("StreamReader")
 
 
+## RediSearch
 
+Used to find available games:
+```
+FT.CREATE GAME ON HASH PREFIX 1 GAME: SCHEMA owner TEXT secret TEXT private NUMERIC SORTABLE playercount NUMERIC SORTABLE
 
+FT.CREATE USER ON HASH PREFIX 1 USER: SCHEMA name TEXT settings TEXT secret TEXT
+```
+
+```
+FT.SEARCH "GAME" "@playercount:[0 1000])" SORTBY playercount DESC LIMIT 0 1
+```
 
 
 ## Running locally using docker-compose
@@ -49,11 +69,6 @@ Application stack consists of three main components:
 docker-compose up --build
 ```
 
-
-
-
-## Use of redis
-GG
 
 ## Utility & Usefulness
 GG
