@@ -19,11 +19,9 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 ## How it Works?
 ### Architecture
 
-<img src="docs/game_data_loop.png" width="98.5%" height="auto">
-<img src="docs/redis_player_commands.png" width="49%" width="49%" height="auto">
-<img src="docs/redis_database_setup.png" width="49%" height="auto">
-
-
+<a><img src="docs/game_data_loop.png" width="98.5%" height="auto">></a>
+<a><img src="docs/redis_player_commands.png" width="49%" width="49%" height="auto"></a>
+<a><img src="docs/redis_database_setup.png" width="49%" height="auto"></a>
 
 
 
