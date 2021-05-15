@@ -137,7 +137,7 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
 
             if abs(player['x'] - x < 50) and abs(player['y'] - y < 50):
                 self.games_states[gid]['players'][projectile['uid']]['score'] += 1
-                execute('PUBLISH', gid, f"hit;{enemy_uid},GG")
+                execute('PUBLISH', gid, f"hit;{enemy_uid}")
                 return False
         return False
 
