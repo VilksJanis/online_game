@@ -75,58 +75,58 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         """
         Handle incoming player action. 
         Arguments:
-            stream_name [GAME:gid]
+            stream_name [GAME:game_id]
             payload [str]  
         """
         state_dump = json.dumps(self.games_states)
-        gid = stream_name.split(":")[1]
+        game_id = stream_name.split(":")[1]
 
         self.ts = datetime.now().timestamp() * 1000
-        self.clean_state(gid)
+        self.clean_state(game_id)
 
-        should_publish = self.action_mapping.get(payload["action"], self.not_implemented)(gid, *payload["action_args"].split(","))
+        should_publish = self.action_mapping.get(payload["action"], self.not_implemented)(game_id, *payload["action_args"].split(","))
 
         if should_publish:
-            execute('PUBLISH', gid, f"{payload['action']};{payload['action_args']}")
+            execute('PUBLISH', game_id, f"{payload['action']};{payload['action_args']}")
 
-        execute("XADD", f"games_states:{gid}", "MAXLEN", "~", "100000", "*", "state", state_dump)
+        execute("XADD", f"games_states:{game_id}", "MAXLEN", "~", "100000", "*", "state", state_dump)
 
-    def pose(self, gid, uid, x, y, o):
+    def pose(self, game_id, user_id, x, y, o):
         """
         Handle player pose event.
         Pose consists of position and angle (o - orientation) of the player
 
         return True if it is necessary to update (always)
         """
-        player = self.games_states[gid]["players"][uid]
+        player = self.games_states[game_id]["players"][user_id]
         player["x"] = int(x) if y is not None else 0
         player["y"] = int(y) if y is not None else 0
         player["orientation"] = float(o)
 
         return True
 
-    def click(self, gid, uid, x, y, o):
+    def click(self, game_id, user_id, x, y, o):
         """
         Handle player main key pressed event.
         """
-        player = self.games_states[gid]["players"][uid]
+        player = self.games_states[game_id]["players"][user_id]
 
-        self.games_states[gid]["projectiles"].append({
+        self.games_states[game_id]["projectiles"].append({
             "timestamp": self.ts,   # server time
             "x": player["x"] if player['x'] is not None else 9999,
             "y": player["y"] if player['y'] is not None else 9999,
             "orientation": o,       # radians
             "ttl": 2000,            # ms
             "speed": 1,             # px/ms
-            "uid": uid
+            "user_id": user_id
         })
 
         return True
 
 
-    def hit(self, gid, uid, enemy_uid):
-        projectiles = self.games_states[gid]["projectiles"]
-        player = self.games_states[gid]["players"][enemy_uid]
+    def hit(self, game_id, user_id, enemy_user_id):
+        projectiles = self.games_states[game_id]["projectiles"]
+        player = self.games_states[game_id]["players"][enemy_user_id]
 
         for projectile in projectiles:
             time_diff = self.ts - projectile['timestamp']
@@ -136,13 +136,13 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
 
 
             if abs(player['x'] - x < 50) and abs(player['y'] - y < 50):
-                self.games_states[gid]['players'][projectile['uid']]['score'] += 1
-                execute('PUBLISH', gid, f"hit;{enemy_uid}")
+                self.games_states[game_id]['players'][projectile['user_id']]['score'] += 1
+                execute('PUBLISH', game_id, f"hit;{enemy_user_id}")
                 return False
         return False
 
-    def respawn(self, gid, uid, x, y):
-        player = self.games_states[gid]["players"][uid]
+    def respawn(self, game_id, user_id, x, y):
+        player = self.games_states[game_id]["players"][user_id]
 
         player["respawns"] = player["respawns"] + 1
         player["x"] = x
@@ -150,26 +150,26 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
 
         return True
 
-    def join(self, gid, uid, x, y):
+    def join(self, game_id, user_id, x, y):
         """
         Handle player leave event.
             Execute Redis gears function `leave_game`            
         """
-        self.games_states[gid]["players"][uid]
+        self.games_states[game_id]["players"][user_id]
         return True
 
-    def leave(self, gid, uid):
+    def leave(self, game_id, user_id):
         """
         Handle player leave event.
             Execute Redis gears function `leave_game`            
         """
-        del self.games_states[gid]["players"][uid]
-        execute("RG.TRIGGER", "leave_game", uid, gid)
+        del self.games_states[game_id]["players"][user_id]
+        execute("RG.TRIGGER", "leave_game", user_id, game_id)
         return True
 
-    def clean_state(self, gid):
-        projectiles = self.games_states[gid]["projectiles"]
-        self.games_states[gid]["projectiles"] = [projectile for projectile in projectiles if (
+    def clean_state(self, game_id):
+        projectiles = self.games_states[game_id]["projectiles"]
+        self.games_states[game_id]["projectiles"] = [projectile for projectile in projectiles if (
             projectile["timestamp"] + projectile["ttl"]) >= self.ts]
 
     def not_implemented(self, *args, **kwargs):

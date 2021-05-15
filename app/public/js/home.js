@@ -1,6 +1,8 @@
 unset_identity();
 
 async function join_game() {
+    // LANDING PAGE BUTTON CLICK
+
     await register();
     let playername = $("#playerName").val();
     let theme = $("#teamSelect .carousel-item.active").id;

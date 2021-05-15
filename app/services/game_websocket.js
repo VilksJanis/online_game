@@ -4,38 +4,47 @@ const redis = require("redis");
 var fs = require('fs');
 
 var config = JSON.parse(fs.readFileSync('/game_config/game_conf.json', 'utf8'));
-const redis_client = redis.createClient(6379, 'redis');
 const WEBSOCKET_PORT = parseInt(config.websocket.port);
-
 const letterNumber = /^[0-9a-zA-Z]+$/;
+
+const redis_client = redis.createClient(6379, 'redis');
+const websocket_server = new WebSocket.Server({ port: WEBSOCKET_PORT });
+
 not_implemented = () => { };
 
 const MESSAGE_EVENT_HANDLERS = {
+    // handle pose events
     p: async (socket, x, y, o) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "p", "action_args", [socket.uid, x, y, o].join());
     },
+    // handle click events
     c: async (socket, x, y, angle) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "c", "action_args", [socket.uid, x, y, angle].join());
     },
+    // handle leave events
     l: async (socket) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "l", "action_args", [socket.uid].join());
     },
+    // handle hit events
     hit: async (socket, enemy_uid) => {
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "hit", "action_args", [socket.uid, enemy_uid].join());
     },
+    // handle respawn events
     r: async (socket) => {
         let random = Math.floor(Math.random() * config.world.spawns.length);
         let [x, y] = config.world.spawns[random];
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "r", "action_args", [socket.uid, x, y].join());
     },
+    // handle join events
     j: async (socket) => {
         let random = Math.floor(Math.random() * config.world.spawns.length);
         let [x, y] = config.world.spawns[random];
         redis_client.xadd("player_actions:" + socket.gid, '*', "action", "j", "action_args", [socket.uid, x, y].join());
     },
+    // handle uid request/response events
     uid: async (socket, uid, secret = "") => {
         redis_client.hgetall("GAME:" + socket.gid, (err, game) => {
-            if (game != null && game['user__' + uid] != undefined) {
+            if (game != null && game['USER:' + uid] != undefined) {
                 subscribe_player_actions(socket);
                 socket.uid = uid;
                 socket.send("uid;" + true);
@@ -57,10 +66,10 @@ const MESSAGE_EVENT_HANDLERS = {
 };
 
 
-const websocket_server = new WebSocket.Server({ port: WEBSOCKET_PORT });
+
 
 websocket_server.on('connection', (socket, req) => {
-    load_gid(req.url, socket);
+    load_game_id(req.url, socket);
 
     // Process incomming player websocket messages:
     socket.on('message', message => {
@@ -76,7 +85,8 @@ websocket_server.on('connection', (socket, req) => {
 
 
 
-function load_gid(url, socket) {
+function load_game_id(url, socket) {
+    // used to load game_id fro the url component
     gid = url.split("/").slice(-1)[0];
     if (!letterNumber.test(gid) || gid.length != 32) {
         socket.close();

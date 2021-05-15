@@ -65,13 +65,13 @@ class FindGameFunctionBuilder(BaseFunctionBuilder):
 
             # "[1, 'GAME:f627c6d1cbd74be2a9569c3f7259dfa1', ['playercount', '0', 'owner', 'USER:123', 'secret', 'secret123', 'private', '1']]"
 
-        def find_game(uid):
+        def find_game(user_id):
             game = query()
             if game != [0] and type(game) == list:
                 return game[1].split(":")[1]
 
             # CREATE A NEW GAME IF THERE ARE NO GAMES
-            game = execute("RG.TRIGGER", "create_new_game", f"USER:{uid}")
+            game = execute("RG.TRIGGER", "create_new_game", f"USER:{user_id}")
 
             if game:
                 return game[0]
@@ -102,20 +102,20 @@ class JoinGameFunctionBuilder(BaseFunctionBuilder):
 
         """
 
-        def assign_to_game(uid, gid):
+        def assign_to_game(user_id, game_id):
             # add user reference to the game
-            execute("HSET", f"GAME:{gid}", f"user__{uid}", int(datetime.now().timestamp()))
-            execute("HINCRBY", f"GAME:{gid}", "playercount", 1)
+            execute("HSET", f"GAME:{game_id}", f"USER:{user_id}", int(datetime.now().timestamp()))
+            execute("HINCRBY", f"GAME:{game_id}", "playercount", 1)
 
-        def is_authorized(uid, gid, secret):
-            return execute("RG.TRIGGER", "user_authorized", uid, gid, secret) 
+        def is_authorized(user_id, game_id, secret):
+            return execute("RG.TRIGGER", "user_authorized", user_id, game_id, secret) 
 
-        def subcall(uid, gid, secret=""):
-            if not is_authorized(uid, gid, secret):
+        def subcall(user_id, game_id, secret=""):
+            if not is_authorized(user_id, game_id, secret):
                 return False
 
-            assign_to_game(uid, gid)
-            return gid
+            assign_to_game(user_id, game_id)
+            return game_id
 
         (
             GB('CommandReader')
@@ -142,9 +142,9 @@ class LeaveGameFunctionBuilder(BaseFunctionBuilder):
                 RG.TRIGGER leave_game user1 game1
         """
 
-        def subcall(uid, gid, secret=None):
-            execute("HDEL", f"GAME:{gid}", f"user__{uid}")
-            execute("HINCRBY", f"GAME:{gid}", "playercount", -1)
+        def subcall(user_id, game_id, secret=None):
+            execute("HDEL", f"GAME:{game_id}", f"USER:{user_id}")
+            execute("HINCRBY", f"GAME:{game_id}", "playercount", -1)
 
         (
             GB('CommandReader')
@@ -167,8 +167,8 @@ class UserAuthorizedFunctionBuilder(BaseFunctionBuilder):
                 RG.TRIGGER user_authorized user1 game1
         """
 
-        def subcall(uid, gid, secret):
-            return execute("HGET", f"GAME:{gid}", "secret") == secret or execute("HGET", f"GAME:{gid}", f"user__{uid}") != 'None' or execute("HGET", f"GAME:{gid}", "owner") == f'USER:{uid}'
+        def subcall(user_id, game_id, secret):
+            return execute("HGET", f"GAME:{game_id}", "secret") == secret or execute("HGET", f"GAME:{game_id}", f"USER:{user_id}") != 'None' or execute("HGET", f"GAME:{game_id}", "owner") == f'USER:{user_id}'
 
         (
             GB('CommandReader')
