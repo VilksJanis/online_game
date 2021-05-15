@@ -17,10 +17,9 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 
 ## How it Works?
 ### Architecture
-
-<a><img src="docs/game_data_loop.png" width="98.5%" height="auto"></a>
-<a><img src="docs/redis_player_commands.png" width="49%" width="49%" height="auto"></a>
-<a><img src="docs/redis_database_setup.png" width="49%" height="auto"></a>
+![architecture_1](https://github.com/VilksJanis/online_game/blob/main/docs/game_data_loop.png?raw=true)
+![architecture_2](https://github.com/VilksJanis/online_game/blob/main/docs/redis_player_commands.png?raw=true)
+![architecture_3](https://github.com/VilksJanis/online_game/blob/main/docs/redis_database_setup.png?raw=true)
 
 **Application stack consists of three main components:**
 * JavaScript client:
