@@ -23,7 +23,7 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 <a><img src="docs/redis_player_commands.png" width="49%" width="49%" height="auto"></a>
 <a><img src="docs/redis_database_setup.png" width="49%" height="auto"></a>
 
-Application stack consists of three main components:
+**Application stack consists of three main components:**
 * JavaScript client:
     - uses phaser 3 game engine for rendering and physics simulations;
     - captures user inputs and sends inputs to the backend;
@@ -41,27 +41,39 @@ Application stack consists of three main components:
 
 ## RedisGears function list:
 
-- create_new_game ("CommandReader"):
-    - Called
-    - Return
-- create_new_user ("CommandReader"):
-    - Called
-    - Return
-- find_game ("CommandReader"):
-    - Called
-    - Return
-- join_game ("CommandReader"):
-    - Called
-    - Return
-- leave_game ("CommandReader"):
-    - Called
-    - Return
-- user_authorized ("CommandReader"):
-    - Called
-    - Return
-- player_actions ("StreamReader"):
-    - Called
-    - Return
+- `create_new_game` (CommandReader, args: [`user_id`], optional: [`private`, `secret`]):
+    - Creates a hash (`HSET`);
+    - Creates an expiry for the hash (`EXPIRE`);
+    - Triggered by calling `RG.TRIGGER create_new_game USER:p1_uid 1 secret123`;
+    - returns `game_id`;
+- `create_new_user` (CommandReader, args: [`uid`], optional: [`settings`, `secret`]):
+    - Creates a hash (`HSET`) 
+    - Creates an expiry for the hash (`EXPIRE`)
+    - Triggered by calling `RG.TRIGGER create_new_user p1_uid Player1 '' aahh`
+    - returns `user_id`
+- `find_game` (CommandReader, optional: [`game_id`]):
+    - If game_id provided then executes `FT.SEARCH` (see RediSearch bellow)
+    - If game not found then trigger `create_new_game`
+    - Triggered by calling `RG.TRIGGER find_game p1_uid`
+    - returns `game_id`
+- `join_game` (CommandReader, args: [`user_id`, `game_id`]):
+    - Triggered by calling `RG.TRIGGER join_game p1_uid g1_gid secret123`
+    - returns `game_id`
+- `leave_game` (CommandReader):
+    - Creates a hash (`HSET`) 
+    - Creates an expiry for the hash (`EXPIRE`)
+    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
+    - returns `game_id`
+- `user_authorized` (CommandReader):
+    - Creates a hash (`HSET`) 
+    - Creates an expiry for the hash (`EXPIRE`)
+    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
+    - returns `game_id`
+- `player_actions` (StreamReader):
+    - Creates a hash (`HSET`) 
+    - Creates an expiry for the hash (`EXPIRE`)
+    - Triggered by calling `RG.TRIGGER create_new_game USER:123 1 secret123`
+    - returns `game_id`
 
 
 ## RediSearch
