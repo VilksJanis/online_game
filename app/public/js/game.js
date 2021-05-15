@@ -39,45 +39,65 @@ webSocket.onclose = function (event) {
 
 // MESSAGE EVENT DEFINITION:
 const MESSAGE_EVENT_HANDLERS = {
-  p: async (uid, x, y) => {
+  p: async (uid, x, y, o) => {
+    // position event
     if (UID != uid) {
-      update_enemy_position(uid, x, y)
-    } else {
-      // do nothing
+      enemy_poses(uid, x, y, o)
     }
   },
   c: async (uid, x, y, angle) => {
+    // click event
     if (UID != uid) {
-      enemy_shoot(uid, x, y, angle)
-    } else {
-      // do nothing
+      enemy_shoots(uid, x, y, angle)
     }
   },
-  o: async (uid, angle) => {
-    if (UID != uid) {
-      update_enemy_orientation(uid, angle)
-    } else {
-      // do nothing
-    }
+  r: async (uid, x, y) => {
+    // respawn event
+    respawn_player(uid, x, y)
   },
-  u: async (uid, x, y, angle) => {
-    console.log(x, y, angle);
+  hit: async (uid) => {
+    // hit event
+    if (UID != uid) {
+      if (enemies[uid] != undefined) {
+        enemies[uid].disableBody(true, true);
+      }
+    } else {
+      player.disableBody(true, true);
+
+      let gameOverText = game.scene.scenes[0].add.text(player.x, player.y, 'OUCH!', { fontSize: '64px', fill: '#fff' });
+      gameOverText.setDepth(1);
+    
+      const gameOverButton = game.scene.scenes[0].add.text(player.x - 60, player.y + 65, 'Respawn!', { fontSize: '64px', fill: '#fff' })
+      gameOverButton.setInteractive({ useHandCursor: true })
+        .on('pointerover', () => enterButtonHoverState(gameOverButton))
+        .on('pointerout', () => enterButtonRestState(gameOverButton))
+        .on('pointerup', () => respawnRequest(gameOverButton, gameOverText)); 
+    }
+
+  },
+  score: async (score) => {
+    // score event
+    console.log(score)
   },
   l: async (uid) => {
+    // leave event
     if (enemies[uid] != undefined) {
       enemies[uid].destroy();
     }
   },
   j: async (uid, x, y) => {
+    // player join event
     spawn_player(uid, x, y);
   },
   uid: async (is_valid) => {
+    // uid request response event
     if (!is_valid) {
       unset_identity();
       window.location.href = "/"
     }
   },
   gid: async (is_valid) => {
+    // gid response event
     if (!is_valid) {
       window.location.href = "/";
     }
@@ -111,7 +131,7 @@ const CONFIG = {
 // INITIALIZE GAME:
 const game = new Phaser.Game(CONFIG);
 
-
+// GLOBAL GAME VARIABLES:
 var player = null;
 var platforms = null;
 var enemies = {};
@@ -148,27 +168,21 @@ function create() {
   player.setScale(1.5, 1.5);
   player.setVisible(false);
   player.last_shot = 0;
-  player.state_emit_timer = 0;
   this.cameras.main.startFollow(player);
   webSocket.send("j;"); // receive position
 
-  // DEFINE OBSTACLES\
+
+  // DEFINE OBSTACLES
   platforms = this.physics.add.staticGroup();
-  platforms.create(600, 400, 'box');
-  platforms.create(300, 600, 'box');
-  platforms.create(700, 250, 'box');
-  platforms.create(1000, 1000, 'box');
-  platforms.create(1200, 700, 'box');
-  platforms.create(1200, 250, 'box');
-  platforms.create(700, 1800, 'box');
-  platforms.create(397, 1700, 'box');
-  platforms.create(1700, 250, 'box');
-  platforms.create(1500, 397, 'box');
-  platforms.create(1500, 1800, 'box');
-  platforms.create(1700, 1500, 'box');
-  platforms.create(397, 700, 'box');
-  platforms.create(1800, 250, 'box');
-  platforms.create(1800, 700, 'box');
+  platform_coords = [[600, 400], [300, 600], [700, 250], [1000, 1000], [1200, 700],
+  [1200, 250], [700, 1800], [397, 1700], [1700, 250], [1500, 397],
+  [1500, 1800], [1700, 1500], [397, 700], [1800, 250], [1800, 700]];
+
+  // SPAWN OBSTACLES
+  platform_coords.forEach(([x, y]) => {
+    platforms.create(x, y, 'box');
+  })
+
 
   // DEFINE PROJECTILES
   projectiles = this.physics.add.group({
@@ -193,21 +207,6 @@ function create() {
   });
 
 
-  // scoreBoard = this.add.container(player.x - 20, player.y + 24);
-  // scoreText = this.add.text(player.x - 20, player.y + 24, "SCORE: 0", { fontSize: '16px', color: '#fff' });
-  // scoreBoard.add(scoreText);
-
-  // this.tweens.add({
-  //   targets: scoreBoard,
-  //   x: scoreBoard.x + player.x,
-  //   ease: 'Linear',
-  //   duration: 1,
-  //   delay: 1,
-  //   yoyo: false,
-  //   repeat: -1
-  // });
-
-
   // DEFINE CONTROLS:
   arrows = this.input.keyboard.createCursorKeys();
   wasd = this.input.keyboard.addKeys({ 'W': Phaser.Input.Keyboard.KeyCodes.W, 'S': Phaser.Input.Keyboard.KeyCodes.S, 'A': Phaser.Input.Keyboard.KeyCodes.A, 'D': Phaser.Input.Keyboard.KeyCodes.D });
@@ -219,12 +218,10 @@ function create() {
   cursors.check_pressed_right = function () { return this.right.isDown || this.D.isDown };
 
 
-  // DEFINE EVENTS:
+  // DEFINE INTERACTION EVENTS:
   this.input.on('pointermove', function (pointer) {
     let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x + this.cameras.main.scrollX, pointer.y + this.cameras.main.scrollY);
-    send_angle(angle);
     player.setRotation(angle - Math.PI / 2);
-
   }, this);
 
   this.input.on("pointerdown", function (pointer) {
@@ -243,26 +240,20 @@ function create() {
   }, this);
 
   this.events.on('postupdate', function () {
-    if (player.x != last_x || player.y != last_y) {
-      send_movement_state(
-        player.x,
-        player.y,
-      );
-      last_x = player.x;
-      last_y = player.y;
-    }
+    send_pose(player.x, player.y, player.rotation);
   });
 
 }
 
-// GAME FRAME UPDATE CALL:
+// GAME FRAME UPDATE CALL
 function update(time, delta) {
+  // movement functionality
   var activity_detected = false;
   var xMovement = 0;
   var yMovement = 0;
+
   xMovement = cursors.check_pressed_left() ? -1 : cursors.check_pressed_right() ? 1 : 0;
   yMovement = cursors.check_pressed_up() ? -1 : cursors.check_pressed_down() ? 1 : 0;
-
 
   if (xMovement != 0 && yMovement != 0) {
     player.setVelocityX(xMovement * playerMoveSpeedDiagonal);
@@ -271,54 +262,36 @@ function update(time, delta) {
     player.setVelocityX(xMovement * playerMoveSpeedAx);
     player.setVelocityY(yMovement * playerMoveSpeedAx);
   }
-
   activity_detected = (2 * xMovement) + yMovement != 0 ? true : false;
-  player.state_emit_timer += delta;
-
-  if (player.state_emit_timer > 500) {
-    send_movement_state(player.x, player.y);
-    player.state_emit_timer = 0;
-  }
-
   player.last_shot = player.last_shot + delta;
-  // scoreText.x = player.x - 20;  
-  // scoreText.y = player.y + 24;  
-
 }
 
-function send_movement_state(x, y) {
-  webSocket.send("p;" + [parseInt(x), parseInt(y)].join());
+
+// OUTGOING PLAYER EVENTS
+function send_pose(x, y, angle) {
+  webSocket.send("p;" + [parseInt(x), parseInt(y), angle.toFixed(4)].join());
 }
 
 function send_click(x, y, angle) {
   webSocket.send("c;" + [parseInt(x), parseInt(y), angle.toFixed(4)].join());
 }
 
-function send_angle(angle) {
-  webSocket.send("o;" + [angle.toFixed(4)].join());
-}
 
-function update_enemy_position(uid, x, y) {
+// INCOMMING ENEMY EVENTS
+function enemy_poses(uid, x, y, o) {
   if (enemies[uid] != undefined) {
-    enemies[uid].x = parseInt(x);
-    enemies[uid].y = parseInt(y);
+    enemy = enemies[uid];
+    enemy.setPosition(parseInt(x), parseInt(y));
+    enemies[uid].setRotation(parseFloat(o));
+
   } else {
-    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
-    game.scene.scenes[0].physics.add.collider(player, platforms);
-    game.scene.scenes[0].physics.add.collider(player, sprite);
-    game.scene.scenes[0].physics.add.collider(projectiles, sprite, onPlayerHit);
-    sprite.setScale(1.5, 1.5);
-    enemies[uid] = sprite;
+    enemy = add_enemy(uid);
+    enemy.setPosition(parseInt(x), parseInt(y));
+    enemy.setRotation(parseFloat(o));
   }
 }
 
-function update_enemy_orientation(uid, angle) {
-  if (enemies[uid] != undefined) {
-    enemies[uid].setRotation(parseFloat(angle) - Math.PI / 2);
-  }
-}
-
-function enemy_shoot(uid, x, y, angle) {
+function enemy_shoots(uid, x, y, angle) {
   var projectile = projectiles.get();
 
   if (projectile && enemies[uid].active) {
@@ -327,26 +300,84 @@ function enemy_shoot(uid, x, y, angle) {
     enemies[uid].anims.play('shoot', true);
     player.last_shot = 0;
   }
-
-
 }
 
 
+// ADD ENEMY GAME OBJECT
+function add_enemy(uid) {
+  // ADD SPRITE
+  sprite = game.scene.scenes[0].physics.add.sprite(0, 0, 'player');
+  sprite.setScale(1.5, 1.5);
+  sprite.name = uid;
+  enemies[uid] = sprite;
+
+  // ADD COLLIDERS
+  game.scene.scenes[0].physics.add.collider(sprite, platforms);
+  game.scene.scenes[0].physics.add.collider(sprite, player);
+  game.scene.scenes[0].physics.add.collider(sprite, projectiles, onEnemyHit);
+
+  return sprite
+}
+
+// SPAWN FUNCTIONALITY
+function spawn_self(x, y) {
+  player.setPosition(parseInt(x), parseInt(y));
+  player.setVisible(true);
+}
+
+function spawn_enemy(uid, x, y) {
+  enemy = add_enemy(uid);
+  enemy.setPosition(parseInt(x), parseInt(y));
+  player.setVisible(true);
+
+}
+
 function spawn_player(uid, x, y) {
   if (UID != uid) {
-    // SPAWN ENEMY
-    sprite = game.scene.scenes[0].physics.add.sprite(parseInt(x), parseInt(y), 'player');
-    sprite.setScale(1.5, 1.5);
-    game.scene.scenes[0].physics.add.collider(player, platforms);
-    game.scene.scenes[0].physics.add.collider(player, sprite);
-    game.scene.scenes[0].physics.add.collider(projectiles, sprite, onPlayerHit);
-
-    enemies[uid] = sprite;
+    spawn_enemy(uid, x, y);
   } else {
-    // SPAWN SELF
-    player.setPosition(parseInt(x), parseInt(y))
-    player.setVisible(true);
+    spawn_self(x, y);
   }
+}
+
+
+// RESPAWN FUNCTIONALITY
+function respawn_self(x, y) {
+  player.setPosition(parseInt(x), parseInt(y));
+  player.setVisible(true);
+  player.enableBody(true, player.x, player.y, true, true);
+}
+
+function respawn_enemy(uid, x, y) {
+  if (enemies[uid] != undefined) {
+    enemy = add_enemy(uid);
+  }
+  enemies[uid].setPosition(parseInt(x), parseInt(y))
+  enemies[uid].setVisible(true);
+  enemies[uid].enableBody(true, enemies[uid].x, enemies[uid].y, true, true);
+}
+
+function respawn_player(uid, x, y) {
+  if (UID != uid) {
+    respawn_enemy(uid, x, y);
+  } else {
+    respawn_self(x, y);
+  }
+}
+
+
+// COLLIDER EVENT CALLS:
+function onProjectileHit(projectile, object) {
+  projectile.disableBody(true, true);
+}
+
+function onEnemyHit(object,projectile) {
+  webSocket.send("hit;" + object.name);
+  projectile.disableBody(true, true);
+}
+
+function onPlayerHit(object, projectile) {
+  projectile.disableBody(true, true);
 }
 
 function onWorldBounds(body) {
@@ -355,15 +386,25 @@ function onWorldBounds(body) {
   p.setVisible(false);
 }
 
-function onProjectileHit(projectile, object) {
-  projectile.disableBody(true, true);
+
+
+// GAME OVER DIALOG:
+function enterButtonHoverState(b) {
+  b.setStyle({ fill: '#ff0' });
+};
+
+function enterButtonRestState(b) {
+  b.setStyle({ fill: '#fff' });
+};
+
+function respawnRequest(gameOverButton, gameOverText) {
+  webSocket.send("r;");
+  gameOverButton.setVisible(false)
+  gameOverText.setVisible(false)
 }
 
-function onPlayerHit(projectile, object) {
-  projectile.disableBody(true, true);
-  object.disableBody(true, true);
-}
 
+// PROJECTILE DEFINITION:
 var Projectile = new Phaser.Class({
   Extends: Phaser.Physics.Arcade.Sprite,
   initialize: function Projectile(scene) {
