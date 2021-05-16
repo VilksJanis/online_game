@@ -50,7 +50,7 @@ class FindGameFunctionBuilder(BaseFunctionBuilder):
             Arguments:
                 user
             Returns:
-                redis key [GAME:g_id]
+                redis key [GAME:game_id]
             Trigger example:
                 RG.TRIGGER find_game user1
 
@@ -95,7 +95,7 @@ class JoinGameFunctionBuilder(BaseFunctionBuilder):
             Arguments:
                 user, game, secret (optional)
             Returns:
-                redis key [GAME:g_id]
+                redis key [GAME:game_id]
             Trigger example:
                 RG.TRIGGER join_game user1 game1
                 RG.TRIGGER join_game user1 game1 secret123

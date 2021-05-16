@@ -76,7 +76,7 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
         Handle incoming player action. 
         Arguments:
             stream_name [GAME:game_id]
-            payload [str]  
+            action_args [str] (csv)  
         """
         state_dump = json.dumps(self.games_states)
         game_id = stream_name.split(":")[1]
@@ -125,6 +125,11 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
 
 
     def hit(self, game_id, user_id, enemy_user_id):
+        """
+        Determines if the projectile has hit a user [user_id]
+        Extrapolates projectile position based on when projectile has spawned, and the time now.
+        Publishes a hit even if target is hit.
+        """
         projectiles = self.games_states[game_id]["projectiles"]
         player = self.games_states[game_id]["players"][enemy_user_id]
 
@@ -152,8 +157,9 @@ class ParsePlayerFunctionBuilder(BaseFunctionBuilder):
 
     def join(self, game_id, user_id, x, y):
         """
-        Handle player leave event.
-            Execute Redis gears function `leave_game`            
+        Handle player join event.
+
+        Add user to the game instance
         """
         self.games_states[game_id]["players"][user_id]
         return True
