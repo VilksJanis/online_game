@@ -183,6 +183,9 @@ Perhaps ports `8080` or `8082` are already registered. You can change port mappi
     restart: always
 ```
 
+
+**WebSocket might be working inconsistently when minimized. For best experience do not run multiple minimized instances.**
+
 ### Cleanup
 
 Run following commands to clean up your running environment.
