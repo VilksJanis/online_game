@@ -49,21 +49,21 @@ class CreateNewGameFunctionBuilder(BaseFunctionBuilder):
         """
             Registers create_new_game redis gears fucntion to redis.
             For each generate_new_game call creates a new HASH under game namespace:
-                GAME:[g_id] owner [uid], secret [hash], private [bool], playercount [int]
+                GAME:[game_id] owner [user_id], secret [hash], private [bool], playercount [int]
             Returns:
-                redis key [GAME:g_id]
+                redis key [GAME:game_id]
             Trigger example:
                 RG.TRIGGER create_new_game USER:123 1 secret123
         """
 
         def subcall(user, private=0, secret=""):
-            g_id = uuid.uuid4().hex
-            key = f"GAME:{g_id}"
+            game_id = uuid.uuid4().hex
+            key = f"GAME:{game_id}"
 
             execute("HSET", key, "owner", user, "secret", str(secret), "private", int(private), "playercount", 0)
             execute("EXPIRE", key, SECONDS_IN_DAY)
 
-            return g_id
+            return game_id
         (
             GB('CommandReader')
             .map(lambda x: subcall(*x[1:]))
@@ -87,8 +87,8 @@ class CreateUserFunctionBuilder(BaseFunctionBuilder):
                 RG.TRIGGER create_new_user hhaa Player1 '' aahh
         """
 
-        def subcall(uid, name, settings='{}', secret=""):
-            key = f"USER:{uid}"
+        def subcall(user_id, name, settings='{}', secret=""):
+            key = f"USER:{user_id}"
 
             execute("HSET", key, "name", name, "setttings", settings, "secret", str(secret))
             execute("EXPIRE", key, SECONDS_IN_DAY * 30)
