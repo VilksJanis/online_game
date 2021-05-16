@@ -16,7 +16,9 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 
 
 ## How it Works?
+[Video Explanation of redis and Redis Gears functions](https://youtu.be/pu9yTTGozFI)
 ### Architecture
+
 ![architecture_1](https://github.com/VilksJanis/online_game/blob/main/docs/game_data_loop.png?raw=true)
 ![architecture_2](https://github.com/VilksJanis/online_game/blob/main/docs/redis_player_commands.png?raw=true)
 ![architecture_3](https://github.com/VilksJanis/online_game/blob/main/docs/redis_database_setup.png?raw=true)
