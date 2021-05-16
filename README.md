@@ -39,6 +39,8 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 
 ## RedisGears function list:
 
+**Redis Gears functions are registered on container startup in the `redis/start_redis.sh`**
+
 - `create_new_game` (CommandReader, args: [`user_id`], optional: [`private`, `secret`]):
     - Creates a hash (`HSET`);
     - Creates an expiry for the hash (`EXPIRE`);
@@ -47,7 +49,7 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
 - `create_new_user` (CommandReader, args: [`uid`], optional: [`settings`, `secret`]):
     - Creates a hash (`HSET`) ;
     - Creates an expiry for the hash (`EXPIRE`);
-    - Triggered by calling `RG.TRIGGER create_new_user p1_uid Player1 '' aahh`;
+    - Triggered by calling `RG.TRIGGER create_new_user p1_uid playername '' secret123`;
     - returns `user_id`;
 - `find_game` (CommandReader, optional: [`game_id`]):
     - If game_id provided then executes `FT.SEARCH` (see RediSearch bellow);
@@ -74,19 +76,50 @@ Join the arena, avoid projectiles by moving around and dominate others by landin
     - Triggered by calling `XADD player_actions:g1_gid action p action_args "10,100,0"`.
 
 
-## RediSearch
+`player_actions` Stream Reader explained:
+1. Client connects to node.js websocket server;
+2. With the active connection context the user is being `SUBSCRIBE`d to the `game_id` PubSub channel;
+3. From now on all channel messages the user is subscribed to (on the backend) are also forwarded to the websocket (to frontend);
+4. `MESSAGE_EVENT_HANDLERS` object stores event -> function mapping, and on an incomming message one of the message event functions is being called (see function list below.)
 
-Used to find available games:
+
+client message event handler (`MESSAGE_EVENT_HANDLERS`):
+- `p` (pose) args: [`user_id`, `x`, `y`, `orientation`]; explanation: client receives a `user_id` position update;
+- `c`(click) args: [`user_id`, `x` (where it was clicked at), `y` (where it was clicked at), angle (from the player position to click position)]; explanation: client receives `user_id` click event
+- `r` (respawn) args: [`user_id`, `x`, `y`]; explanation: client receives `user_id` has respawned;
+- `l` (leave) args: [`user_id`]; explanation: client receives `user_id` has left the game; 
+- `j` (join) args: [`user_id`, `x`, `y`]; explanation: client receives `user_id` has joined the game, and `user_id` has spawned in the (`x`, `y`) position
+- `uid` (user id) args: [`is_valid`]; explanation: client receives the response weather it is possible to find 'log the user in';
+- `gid` (game id) args: [`is_valid`]; explanation: client receives if the user is part of the game (is user authorized)
+- `hit` args: [`user_id`]; explanation: client receives a message that `user_id` has been hit / client can remove `user_id` from rendering it;
+- `score` args: ['score']; explanation client receives current score of the game.
+
+websocket server event handler (`MESSAGE_EVENT_HANDLERS`):
+- `p` (pose) args: [`socket`, `x`, `y`, `orientation`]; explanation: server receives `user_id` position update;
+- `c`(click) args: [`socket`, `x` (where it was clicked at), `y` (where it was clicked at), angle (from the player position to click position)]; explanation: server receives `user_id` click event;
+- `r` (respawn) args: [`socket`, `x`, `y`] ; explanation: server receives respawn request;
+- `l` (leave) args: [`socket`]; explanation: server receives leave event; 
+- `j` (join) args: [`socket`, `user_id`, `secret`]; explanation: server receives join request, and authorizes the user
+- `uid` (user id) args: [`socket`]; explanation: server receives `user id`;
+- `hit` args: [`socket`, `enemy_id`]; explanation: server receives hit event, and validates if it's possilbe;
+
+## RediSearch
+**RediSearch indexes are registered on container startup in the `redis/start_redis.sh`**
+
+Created Redis Search indexes: 
 ```
 FT.CREATE GAME ON HASH PREFIX 1 GAME: SCHEMA owner TEXT secret TEXT private NUMERIC SORTABLE playercount NUMERIC SORTABLE
 
 FT.CREATE USER ON HASH PREFIX 1 USER: SCHEMA name TEXT settings TEXT secret TEXT
 ```
 
+Query to find a game:
 ```
 FT.SEARCH "GAME" "(@playercount:[0 1000])" SORTBY playercount DESC LIMIT 0 1
 ```
 
+
+## Data 
 
 ## Running locally
 
